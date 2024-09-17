@@ -2,7 +2,7 @@ import mat73
 import matplotlib.pyplot as plt
 import cv2
 import math
-
+import networkx as nx
 import glob
 import open3d as o3d
 import open3d.core as o3c
@@ -20,70 +20,65 @@ import importlib
 import path_finding
 importlib.reload(path_finding)
 
-from generate_maps import load_s3dis_point_cloud
-
-# def load_s3dis_point_cloud(file_path):
-#     """
-#     Load the S3DIS point cloud data from the given .mat file path using mat73.
-#     """
-#     data_dict = mat73.loadmat(file_path)
+def load_s3dis_point_cloud(file_path):
+    """
+    Load the S3DIS point cloud data from the given .mat file path using mat73.
+    """
+    data_dict = mat73.loadmat(file_path)
     
-#     # Explore the keys to understand the structure of your .mat file
-#     print("Keys in the .mat file:", list(data_dict.keys()))
+    # Explore the keys to understand the structure of your .mat file
+    print("Keys in the .mat file:", list(data_dict.keys()))
 
-#     area_key = list(data_dict.keys())[0]  # Assuming 'Area_3' or similar
-#     area = data_dict[area_key]
+    area_key = list(data_dict.keys())[0]  # Assuming 'Area_3' or similar
+    area = data_dict[area_key]
 
-#     points = []
-#     colors = []
-#     names = []
+    points = []
+    colors = []
+    names = []
 
-#     # Iterate through the Disjoint_Space structures
-#     for disjoint_space in area['Disjoint_Space']:
-#         print(f"Processing {disjoint_space['name']}...")
+    # Iterate through the Disjoint_Space structures
+    for disjoint_space in area['Disjoint_Space']:
+        print(f"Processing {disjoint_space['name']}...")
 
-#         for i in range(len(disjoint_space['object']['points'])):
-#             obj_points = np.array(disjoint_space['object']['points'][i]) # Transpose to get Nx3 shape
-#             obj_colors = np.array(disjoint_space['object']['RGB_color'][i])/255  # Normalize to 0-1 range
+        for i in range(len(disjoint_space['object']['points'])):
+            obj_points = np.array(disjoint_space['object']['points'][i]) # Transpose to get Nx3 shape
+            obj_colors = np.array(disjoint_space['object']['RGB_color'][i])/255  # Normalize to 0-1 range
 
-#             points.append(obj_points)
-#             colors.append(obj_colors)
+            points.append(obj_points)
+            colors.append(obj_colors)
             
-#         names.append(disjoint_space['name'])
-#         # break
-#     # Concatenate all points and colors
-#     all_points = np.concatenate(points, axis=0)
-#     all_colors = np.concatenate(colors, axis=0)
+        names.append(disjoint_space['name'])
+        # break
+    # Concatenate all points and colors
+    all_points = np.concatenate(points, axis=0)
+    all_colors = np.concatenate(colors, axis=0)
     
-#     return all_points, all_colors, names
+    return all_points, all_colors, names
 
 
-def get_top_view_map(points, colors, scene_names, resolution=0.02):
-    
-    point_sum = np.concatenate(points, axis=0)
-    color_sum = np.concatenate(colors, axis=0)
-    scale = 1 / resolution
-    
+def get_top_view_map(point_sum, color_sum, resolution=0.02):
+
+    scale = 1 / 0.01
     # top-view
-    mask_v = point_sum[:, 2] <= 1.5
+    mask_v = point_sum[:, 1] <= 1.5
     points_v = point_sum[mask_v]
     colors_v = color_sum[mask_v]
-    
-    x_v = np.rint(points_v[:, 1] * scale).astype(np.int32)
-    y_v = np.rint(points_v[:, 0] * scale).astype(np.int32)
-    
+
+    x_v = np.rint(points_v[:, 0] * scale).astype(np.int32)
+    y_v = np.rint(points_v[:, 2] * scale).astype(np.int32)
+
     # for obstacle
-    mask_o = (point_sum[:, 2] <= 2.0) & (point_sum[:, 2] >1.8)
+    mask_o = (point_sum[:, 1] <= 1.0) & (point_sum[:, 1] >0.8)
     points_o = point_sum[mask_o]
-    
-    x_o = np.rint(points_o[:, 1] * scale).astype(np.int32)
-    y_o = np.rint(points_o[:, 0] * scale).astype(np.int32)
-    
+
+    x_o = np.rint(points_o[:, 0] * scale).astype(np.int32)
+    y_o = np.rint(points_o[:, 2] * scale).astype(np.int32)
+
     x_min = min(x_v.min(), x_o.min())
     x_max = max(x_v.max(), x_o.max())
     y_min = min(y_v.min(), y_o.min())
     y_max = max(y_v.max(), y_o.max())
-    
+
     x_v -= x_min
     y_v -= y_min
 
@@ -96,17 +91,17 @@ def get_top_view_map(points, colors, scene_names, resolution=0.02):
     z_buffer = np.full((map_height, map_width), -np.inf)
     # Iterate over points
     for i in range(len(points_v)):
-        if points_v[i, 2] > z_buffer[y_v[i], x_v[i]]:
-            z_buffer[y_v[i], x_v[i]] = points_v[i, 2]
+        if points_v[i, 1] > z_buffer[y_v[i], x_v[i]]:
+            z_buffer[y_v[i], x_v[i]] = points_v[i, 1]
             top_view_map[y_v[i], x_v[i]] = (colors_v[i] * 255).astype(np.uint8)
-    
+
     # creat the obstacle map
-    
+
     x_o -= x_min
     y_o -= y_min
     obstacle_map = np.zeros((map_height, map_width), dtype=np.uint8)
     obstacle_map[y_o, x_o] = 1
-    
+
     gray_map_cv = cv2.cvtColor(top_view_map, cv2.COLOR_RGB2GRAY)
     obstacle_empty_map = np.zeros(obstacle_map.shape)
     obstacle_empty_map[gray_map_cv != 0] = 1
@@ -116,16 +111,8 @@ def get_top_view_map(points, colors, scene_names, resolution=0.02):
 
     obstacle_map[ob_map == 0] = 1
     
-   
-    # transfer the center 
-    all_centers = {}
-    for i, point in enumerate(points):
-        pos = np.mean(point[:, :2], axis=0)
-        pos_x = (pos[1] * scale).astype(np.int32) - x_min
-        pos_y = (pos[0] * scale).astype(np.int32) - y_min
-        all_centers[scene_names[i]] = (pos_y, pos_x)
-
-    return x_min, y_min, obstacle_map, all_centers
+        
+    return x_min, y_min, obstacle_map
 
 
 def set_enabled(widget, enable):
@@ -357,7 +344,7 @@ class ReconstructionWindow:
             
 
         
-        # self.widget3d.scene.remove_geometry("path_points")
+        # # self.widget3d.scene.remove_geometry("path_points")
         if len(plan_paths) > 0:
             for i, path in enumerate(plan_paths):
                 path_lineset = self.poses2lineset(np.stack(path), color=[1.-i, i, 0])
@@ -375,59 +362,57 @@ class ReconstructionWindow:
         gui.Application.instance.post_to_main_thread(
             self.window, lambda: self.init_render())
         
-        # Example usage
-        file_path = 'data/noXYZ_area_3_no_xyz/area_3/3d/pointcloud.mat'  # Update this path
-        point_sum_points, point_sum_colors, scene_names = load_s3dis_point_cloud(file_path)
-
-
-        filename = "3"
-
-        # print('Saving model to {}...'.format("saved_maps/"))
-        # if not os.path.exists("saved_maps/"):
-        #     os.makedirs("saved_maps/")
-            
-        # graph_serialized = pickle.dumps(G)
-        # np.savez("saved_maps/" + filename +'_arrays.npz', graph=graph_serialized)
-        # print('Finished.')
-
-        file_path = f"saved_maps/{filename}_arrays.npz"  
-        data = np.load(file_path, allow_pickle=True)
-        graph_serialized = data['graph'].item()
-        G_loaded = pickle.loads(graph_serialized)
-        print("success load!")
-
-        # file_path = 'data/large_scan.xyz'  
-        # data = np.loadtxt(file_path, delimiter=',')
-        # point_sum_points = data[:, :3] 
-        # point_sum_colors = data[:, 3:6] /255 
+        file_path = 'data/large_scan.xyz'  
+        data = np.loadtxt(file_path, delimiter=',')
+        point_sum_points = data[:, :3] 
+        point_sum_colors = data[:, 3:6] /255 
         
         
-        source_nodes = ["office_1"]
-        target_nodes = ["office_3"]
+        scene_names = ["hallway_1", "hallway_2", "hallway_3", "hallway_4", "hallway_5", "office_1", "office_2", "office_3", "conferenceRoom_1"]
+        pos = [(1000, 500), (800, 1000), (300, 2000), (900, 2900), (1200, 2000), (1300, 600), (1400, 1250), (1500, 2300), (1000, 1800)]
+        all_centers = {}
+        for i in range(len(scene_names)):
+            all_centers[scene_names[i]] = (pos[i][1], pos[i][0])
         
-        x_min, y_min, obstacle_map, all_centers = get_top_view_map(point_sum_points, point_sum_colors, scene_names)
+        G = nx.Graph()
+        
+        G = nx.Graph()
+        for name in scene_names:
+                G.add_node(name)
+                
+        G.add_edge("office_1", "hallway_1")
+        G.add_edge("office_2", "hallway_5")
+        G.add_edge("office_3", "hallway_5")
+        G.add_edge("conferenceRoom_1", "hallway_5")
+        G.add_edge("hallway_4", "hallway_5")
+        G.add_edge("hallway_4", "hallway_3")
+        G.add_edge("hallway_2", "hallway_3")
+        G.add_edge("hallway_2", "hallway_1")
+        G.add_edge("hallway_5", "hallway_1")
+
+        
+        source_node = "office_1"
+        target_node = "office_3"
+        
+        x_min, y_min, obstacle_map = get_top_view_map(point_sum_points, point_sum_colors, scene_names)
 
         plan_path = []
-        for source_node, target_node in zip(source_nodes, target_nodes):
-            all_topo_paths = path_finding.get_all_simple_paths(G_loaded, source_node, target_node)
-            all_geo_paths = path_finding.path_plan_from_topo_graph(all_topo_paths, obstacle_map, all_centers)
-            
-            for i, geo_path in enumerate(all_geo_paths):
-                geo_path = np.array(geo_path) 
-                original_y_indices = (geo_path[:, 1] + x_min)* 0.02 
-                original_x_indices = (geo_path[:, 0] + y_min)* 0.02   # Assuming you need to subtract y_max; adjust if it's a different operation
-                original_z_indices = geo_path[:, 0] * 0 + 0.5
-                # Re-zip to get the original geo_path format
-                original_path = np.stack((original_x_indices, original_y_indices, original_z_indices), axis=-1)
-                plan_path.append(original_path)
+        all_topo_paths = path_finding.get_all_simple_paths(G, source_node, target_node)
+        all_geo_paths = path_finding.path_plan_from_topo_graph(all_topo_paths, obstacle_map, all_centers)
+        
+        for i, geo_path in enumerate(all_geo_paths):
+            geo_path = np.array(geo_path) 
+            original_y_indices = (geo_path[:, 1] + x_min)* 0.01 
+            original_x_indices = (geo_path[:, 0] + y_min)* 0.01   # Assuming you need to subtract y_max; adjust if it's a different operation
+            original_z_indices = geo_path[:, 0] * 0 + 0.5
+            # Re-zip to get the original geo_path format
+            original_path = np.stack((original_y_indices, original_z_indices, original_x_indices), axis=-1)
+            plan_path.append(original_path)
 
+        mask = (point_sum_points[:, 1] <= 1.5)
         
-        point_sum = np.concatenate(point_sum_points, axis=0)
-        color_sum = np.concatenate(point_sum_colors, axis=0)
-        mask = (point_sum[:, 2] <= 1.5)
-        
-        points_filtered = point_sum[mask]
-        colors_filtered = color_sum[mask]
+        points_filtered = point_sum_points[mask]
+        colors_filtered = point_sum_colors[mask]
         
         gui.Application.instance.post_to_main_thread(
             self.window, lambda: self.update_render(

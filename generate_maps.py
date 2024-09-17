@@ -44,7 +44,7 @@ def load_s3dis_point_cloud(file_path):
     
     return all_points, all_colors, names
 
-def get_top_view_map(points, colors, scene_names, resolution=0.05):
+def get_top_view_map(points, colors, scene_names, resolution=0.02):
     
     point_sum = np.concatenate(points, axis=0)
     color_sum = np.concatenate(colors, axis=0)
@@ -55,15 +55,15 @@ def get_top_view_map(points, colors, scene_names, resolution=0.05):
     points_v = point_sum[mask_v]
     colors_v = color_sum[mask_v]
     
-    x_v = np.rint(points_v[:, 0] * scale).astype(np.int32)
-    y_v = np.rint(points_v[:, 1] * scale).astype(np.int32)
+    x_v = np.rint(points_v[:, 1] * scale).astype(np.int32)
+    y_v = np.rint(points_v[:, 0] * scale).astype(np.int32)
     
     # for obstacle
     mask_o = (point_sum[:, 2] <= 2.0) & (point_sum[:, 2] >1.8)
     points_o = point_sum[mask_o]
     
-    x_o = np.rint(points_o[:, 0] * scale).astype(np.int32)
-    y_o = np.rint(points_o[:, 1] * scale).astype(np.int32)
+    x_o = np.rint(points_o[:, 1] * scale).astype(np.int32)
+    y_o = np.rint(points_o[:, 0] * scale).astype(np.int32)
     
     x_min = min(x_v.min(), x_o.min())
     x_max = max(x_v.max(), x_o.max())
@@ -108,8 +108,8 @@ def get_top_view_map(points, colors, scene_names, resolution=0.05):
     for i, name in enumerate(scene_names):
         mask_v = points[i][:, 2] <= 1.5
         separate_points = points[i][mask_v]
-        x = np.rint(separate_points[:, 0] * scale).astype(np.int32)
-        y = np.rint(separate_points[:, 1] * scale).astype(np.int32)
+        x = np.rint(separate_points[:, 1] * scale).astype(np.int32)
+        y = np.rint(separate_points[:, 0] * scale).astype(np.int32)
         x -= x_min
         y -= y_min
         obs_map = np.zeros((map_height, map_width), dtype=np.uint8)
@@ -120,8 +120,8 @@ def get_top_view_map(points, colors, scene_names, resolution=0.05):
     all_centers = {}
     for i, point in enumerate(points):
         pos = np.mean(point[:, :2], axis=0)
-        pos_x = (pos[0] * scale).astype(np.int32) - x_min
-        pos_y = (pos[1] * scale).astype(np.int32) - y_min
+        pos_x = (pos[1] * scale).astype(np.int32) - x_min
+        pos_y = (pos[0] * scale).astype(np.int32) - y_min
         all_centers[scene_names[i]] = (pos_y, pos_x)
 
     return top_view_map, obstacle_map, separate_obstacle_map, all_centers
