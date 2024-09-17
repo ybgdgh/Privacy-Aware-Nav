@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from astar import AStar
 
 from PIL import Image, ImageDraw, ImageFont
+from fmm import fmm_path_planning
 
 def write_number(image, number):
     
@@ -192,8 +193,10 @@ def get_all_simple_paths(G, source_node, target_node):
     return unique_list
 
 def path_plan_from_topo_graph(all_topo_paths, obstacle_map, all_centers):
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(30, 30))
-    ob_map = cv2.dilate((obstacle_map).astype('uint8'), kernel)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(25, 25))
+    ob_map_s = cv2.dilate((obstacle_map).astype('uint8'), kernel)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(50, 50))
+    ob_map_l = cv2.dilate((obstacle_map).astype('uint8'), kernel)
     
     all_geo_paths = []
     for topo_path in all_topo_paths:
@@ -203,10 +206,15 @@ def path_plan_from_topo_graph(all_topo_paths, obstacle_map, all_centers):
         for i in range(len(topo_path)-1):
             s_start = all_centers[topo_path[i]]
             s_goal = all_centers[topo_path[i+1]]
+            if i == 0 or i == (len(topo_path)-2):
+                ob_map = ob_map_s
+            else:
+                ob_map = ob_map_l
             ob_map = clean_point_around(s_start[0], s_start[1], 25, ob_map)
             ob_map = clean_point_around(s_goal[0], s_goal[1], 25, ob_map)
             astar = AStar(s_start, s_goal, "manhattan", ob_map)
             path, visited = astar.searching()
+            # path = fmm_path_planning(ob_map, s_start, s_goal)
             geo_path.extend(path)
             
         all_geo_paths.append(geo_path)
