@@ -19,25 +19,10 @@ Experimental results on the S3DIS dataset demonstrate that our framework signifi
 
 The code has been tested only with Python 3.10.8.
 
-1. Installing Dependencies
-
-- Installing habitat-sim:
-```
-git clone https://github.com/ybgdgh/Privacy-Aware-Nav
-pip install -r requirements.txt; 
-```
-
-2. Download S3DIS datasets:
+Download S3DIS datasets:
 
 #### Habitat Matterport
-Download [HM3D](https://aihabitat.org/datasets/hm3d/) dataset using download utility and [instructions](https://github.com/facebookresearch/habitat-sim/blob/main/DATASETS.md#habitat-matterport-3d-research-dataset-hm3d):
-```
-python -m habitat_sim.utils.datasets_download --username <api-token-id> --password <api-token-secret> --uids hm3d_minival_v0.2
-```
-
-3. Download additional datasets
-
-Download the [segmentation model](https://drive.google.com/file/d/1U0dS44DIPZ22nTjw0RfO431zV-lMPcvv/view?usp=share_link) in RedNet/model path.
+Download [S3DIS](http://buildingparser.stanford.edu/) dataset, which contains 6 public scenes.
 
 
 ## Setup
@@ -48,20 +33,6 @@ cd Privacy-Aware-Nav/
 pip install -r requirements.txt
 ```
 
-### Setting up datasets
-The code requires the datasets in a `data` folder in the following format (same as habitat-lab):
-```
-Co-NavGPT/
-  data/
-    scene_datasets/
-    matterport_category_mappings.tsv
-    object_norm_inv_perplexity.npy
-    versioned_data
-    objectgoal_hm3d/
-        train/
-        val/
-        val_mini/
-```
 
 
 ### For evaluation: 
