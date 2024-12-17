@@ -357,15 +357,15 @@ class ReconstructionWindow:
             
 
         
-        # self.widget3d.scene.remove_geometry("path_points")
-        if len(plan_paths) > 0:
-            for i, path in enumerate(plan_paths):
-                path_lineset = self.poses2lineset(np.stack(path), color=[1.-i, i, 0])
-                if path_lineset.has_lines() and path_lineset.has_points():
-                    material = rendering.MaterialRecord()
-                    material.shader = "unlitLine"
-                    material.line_width = 10.0
-                    self.widget3d.scene.add_geometry(f'path_points_{i}', path_lineset, material)
+        # # self.widget3d.scene.remove_geometry("path_points")
+        # if len(plan_paths) > 0:
+        #     for i, path in enumerate(plan_paths):
+        #         path_lineset = self.poses2lineset(np.stack(path), color=[1.-i, i, 0])
+        #         if path_lineset.has_lines() and path_lineset.has_points():
+        #             material = rendering.MaterialRecord()
+        #             material.shader = "unlitLine"
+        #             material.line_width = 10.0
+        #             self.widget3d.scene.add_geometry(f'path_points_{i}', path_lineset, material)
 
 
 
@@ -376,11 +376,11 @@ class ReconstructionWindow:
             self.window, lambda: self.init_render())
         
         # Example usage
-        file_path = 'data/noXYZ_area_3_no_xyz/area_3/3d/pointcloud.mat'  # Update this path
+        file_path = 'data/noXYZ_area_5a_no_xyz/area_5a/3d/pointcloud.mat'  # Update this path
         point_sum_points, point_sum_colors, scene_names = load_s3dis_point_cloud(file_path)
 
 
-        filename = "3"
+        filename = "5a"
 
         # print('Saving model to {}...'.format("saved_maps/"))
         # if not os.path.exists("saved_maps/"):

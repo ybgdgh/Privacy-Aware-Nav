@@ -1,7 +1,7 @@
 area_3:
 
 1. secret file
-   1. office 2 --> office 3
+   1. office_2 --> office 3
    2. office_8 --> conferenceRoom_1
    3. office_8 --> lounge_2
 2. sensitive equipment (vase, tv)

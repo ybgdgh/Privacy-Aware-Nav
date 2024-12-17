@@ -345,14 +345,14 @@ class ReconstructionWindow:
 
         
         # # self.widget3d.scene.remove_geometry("path_points")
-        if len(plan_paths) > 0:
-            for i, path in enumerate(plan_paths):
-                path_lineset = self.poses2lineset(np.stack(path), color=[1.-i, i, 0])
-                if path_lineset.has_lines() and path_lineset.has_points():
-                    material = rendering.MaterialRecord()
-                    material.shader = "unlitLine"
-                    material.line_width = 10.0
-                    self.widget3d.scene.add_geometry(f'path_points_{i}', path_lineset, material)
+        # if len(plan_paths) > 0:
+        #     for i, path in enumerate(plan_paths):
+        #         path_lineset = self.poses2lineset(np.stack(path), color=[1.-i, i, 0])
+        #         if path_lineset.has_lines() and path_lineset.has_points():
+        #             material = rendering.MaterialRecord()
+        #             material.shader = "unlitLine"
+        #             material.line_width = 10.0
+        #             self.widget3d.scene.add_geometry(f'path_points_{i}', path_lineset, material)
 
 
 
