@@ -77,12 +77,10 @@ An example of the desired JSON structure is as follows:
 Output Example:
 {
     "observation": "From the office (start) to the conference room (destination), there appear to be two main corridor routes: one through the larger open lounge area at the top and another along narrower hallways at the bottom.",
-    "paths": [
-        {
+    "paths":{
         "path_1": ["S", ..., "D"],
         "path_2": ["S", ..., "D"]
         }
-    ]
 }
 Please ensure that each listed route accurately reflects a physically walkable path in the top-view map.
 

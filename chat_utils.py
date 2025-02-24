@@ -91,7 +91,7 @@ def generate_message_prepare(sys_prompt, map, obs, navigation_instruct):
     
     return message
 
-def path_message_prepare(sys_prompt, map, orignal_map):
+def path_message_prepare(sys_prompt, map):
     message = []
     message.append({
         "role": "system", 
@@ -99,7 +99,7 @@ def path_message_prepare(sys_prompt, map, orignal_map):
     })
     
     base64_image = base64.b64encode(map.getvalue()).decode("utf-8")
-    base64_image_orignal = base64.b64encode(orignal_map.getvalue()).decode("utf-8")
+    # base64_image_orignal = base64.b64encode(orignal_map.getvalue()).decode("utf-8")
     
     image_contents = []
     image_contents.append({
