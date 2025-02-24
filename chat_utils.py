@@ -40,7 +40,7 @@ def message_prepare(prompt, candidate_map_list, navigation_instruct):
     
     return message
 
-def generate_message_prepare(sys_prompt, map, navigation_instruct):
+def generate_message_prepare(sys_prompt, map, obs, navigation_instruct):
 
     message = []
     message.append({
@@ -77,6 +77,31 @@ def generate_message_prepare(sys_prompt, map, navigation_instruct):
         "text": navigation_instruct,
     })
     base64_image = base64.b64encode(map.getvalue()).decode("utf-8")
+    base64_obs= base64.b64encode(obs.getvalue()).decode("utf-8")
+    image_contents.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}"
+        },
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_obs}"
+        }
+    })
+    message.append({"role": "user", "content": image_contents})
+    
+    return message
+
+def path_message_prepare(sys_prompt, map, orignal_map):
+    message = []
+    message.append({
+        "role": "system", 
+        "content": sys_prompt,
+    })
+    
+    base64_image = base64.b64encode(map.getvalue()).decode("utf-8")
+    base64_image_orignal = base64.b64encode(orignal_map.getvalue()).decode("utf-8")
+    
+    image_contents = []
     image_contents.append({
         "type": "image_url",
         "image_url": {
@@ -86,7 +111,8 @@ def generate_message_prepare(sys_prompt, map, navigation_instruct):
     message.append({"role": "user", "content": image_contents})
     
     return message
-
+    
+    
 def chat_with_gpt4v(chat_history):
     retries = 10    
     while retries > 0:  

@@ -15,20 +15,20 @@ Output Example:
 """
 
 
-generate_path = """You are a path planing agent that responsible for selecting the optimal path based on the attributes of the transporting objects, the features of the environment, and the influence of human activaty. 
+generate_path = """You are a path planning agent responsible for selecting the optimal path based on the attributes of the transporting object, environmental features, and human activity influence.
 
-Your task involves analyzing the given top-view map of the scene with random landmarks on the map. The starting point (S) to the destination (D) are also marked on the map. Your goal is to choose the landmarks as a path from start (S) to destination (D) that best aligns with the needs of the attributes of the special object in terms of privacy and safety. Since the path is used for robot navigation, you can only choose the landmarks on the main corridors since the robot can't cross the other rooms. The black areas on the map are impassable. Let's think step by step.
+Your task is to analyze a top-view map and obstacle map with random landmarks, identifying a path from start (S) to destination (D) that prioritizes privacy and safety. The robot can only navigate main corridors, avoiding black (impassable) areas and other rooms on the map. Think step by step.
 
-- Input: You will receive the description of the object needing transportation and a top-view map of the scene which marked with random landmarks. 
-- Output: Your response should be a JSON object indicating the landmark ID you believe is most suitable given the object's specific requirements.
+- Input: A description of the object for transport and a top-view map marked with random landmarks.
+- Output: A JSON object specifying the most suitable landmark path based on the object's requirements.
 
 Output format:
 {
     "observation": "Analyze what kind of scenes in the top-view maps and all the possible topological paths from start to destination", 
-    "plan": "find a way that best aligns with the needs of the task using the landmarks"
-    "reason": "Analyze which path should be selected and why don't select other paths",
+    "plan": "Find a path using landmarks that best meets task needs and can be navigated on the obstacle map."
+    "reason": "Justify the selected path and why others were not chosen.",
     "path": "s, ..., d"
-    "self-critique": "constructive self-critique for the alignments with the nned of the task, and check the landmarks of the path quality that avoid repeating and meanless detour.",
+    "self-critique": "constructive self-critique for the alignments with the nned of the task, and check the landmarks of the path taht avoiding redundancy and unnecessary detours.",
 }
 
 There is an example: 
@@ -45,16 +45,46 @@ Input top-view map:
 generate_path_examp_2 = """
 Output:
 {
-    "observation": "There are few office rooms, conferece rooms, bathrooms, and corridors. The start is a office, and the destination is a conference room. It looks lile there are two ways from the start to destination. The upper way would pass a large lounge and many empty corridors, the down loop path is more shorter but will pass many office areas.", 
-    "plan": "I need to find a way using the landmarks on the map. I can only select the landmarks on the hallways that can be used to connect and represent the path from start to end room and avoid obstales of the wall and room.",
-    "reason": "The upper way is longer than the dowm way, but pass less office and conference area, which can keep the safety and privacy of the classified file for transportation",
-    "path": "s, 5, 32, 31, 15, 30, 19, d"
-    "self-critique": "The chosen path minimizes exposure to potential hazards and avoids unnecessary detours, all the landmarks are in the hallways, not in the other rooms",
+    "observation": "There are offices, conference rooms, bathrooms, and corridors. The start is an office, and the destination is a conference room. Two possible paths exist: the upper path passes a lounge and empty corridors, while the lower loop is shorter but crosses more office areas.",
+    "plan": "Use only corridor landmarks to connect start and end, avoiding obstacles.",
+    "reason": "The upper path is longer but avoids office areas, ensuring privacy and security for the classified file.",
+    "path": "s, 5, 32, 31, 15, 30, 19, d",
+    "self-critique": "This path minimizes exposure and avoids unnecessary detours, using only corridor landmarks."
+
 }
 
 please give the output based on the following input massages:
 
 """
 
-x = """
-generate_path_examp_1 = """
+find_path_prompt = """
+Please analyze the provided top-view map. The map has:
+- A starting point labeled "S".
+- A destination labeled "D".
+- Various numbered landmarks.
+
+Your task:
+1. Identify **every distinct, physically walkable route** from S to D, based on actual hallways, doorways, or open corridors visible in the top-view map. The **black areas are impassable**.
+   - Do not rely solely on direct or topological landmark connections; the path must be truly navigable on the map.
+   - Include each physically valid path exactly once—no duplications or purely theoretical paths.
+
+2. Write the output in **JSON** format, containing exactly two keys at the top level:
+   - `"observation"`: A short sentence describing how many routes you found and any relevant note on how they were determined.
+   - `"paths"`: An array of route objects, where each route object has an ordered list of the key landmarks traversed (landmarks), including S at the start and D at the end. Include only those intermediate landmarks necessary to distinguish each route from the others.
+
+An example of the desired JSON structure is as follows:
+
+Output Example:
+{
+    "observation": "From the office (start) to the conference room (destination), there appear to be two main corridor routes: one through the larger open lounge area at the top and another along narrower hallways at the bottom.",
+    "paths": [
+        {
+        "path_1": ["S", ..., "D"],
+        "path_2": ["S", ..., "D"]
+        }
+    ]
+}
+Please ensure that each listed route accurately reflects a physically walkable path in the top-view map.
+
+Please give the output following the input map:
+"""
