@@ -70,7 +70,7 @@ Your task:
 
 2. Write the output in **JSON** format, containing exactly two keys at the top level:
    - `"observation"`: A short sentence describing how many routes you found and any relevant note on how they were determined.
-   - `"paths"`: An array of route objects, where each route object has an ordered list of the key landmarks traversed (landmarks), including S at the start and D at the end. Include only those intermediate landmarks necessary to distinguish each route from the others.
+   - `"paths"`: An array of route objects, where each route object has an ordered list of the key landmarks traversed (landmarks), including S at the start and D at the end. Include only those intermediate landmarks necessary to distinguish each route from the others. Avoid redundancy and unnecessary detours.
 
 An example of the desired JSON structure is as follows:
 
@@ -78,11 +78,32 @@ Output Example:
 {
     "observation": "From the office (start) to the conference room (destination), there appear to be two main corridor routes: one through the larger open lounge area at the top and another along narrower hallways at the bottom.",
     "paths":{
-        "path_1": ["S", ..., "D"],
-        "path_2": ["S", ..., "D"]
+        "path_1": ["S", "1", ..., "D"],
+        "path_2": ["S", "3",..., "D"]
         }
 }
 Please ensure that each listed route accurately reflects a physically walkable path in the top-view map.
 
 Please give the output following the input map:
+"""
+
+self_critique_prompt = """
+Double-check and analyse all the generated paths (red lines on the map). The paths should also not involve irrelevant rooms except the start and destination. If all the paths met the task needs, please output "1" in "self_critique", otherwise, please optimaze the paths based on the landmarks on the map around paths with the totally same format by removing repeat physically walkable route or redundancy/unnecessary detours.
+
+# if it's not good
+Output Example:
+{
+    "self_critique": "0", 
+    "paths":{
+        "path_1": ["S", "1", ..., "D"],
+        "path_2": ["S", "3",..., "D"]
+        }
+}
+
+# if it's good:
+Output Example:
+{
+    "self_critique": "1", 
+}
+
 """

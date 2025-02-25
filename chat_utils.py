@@ -112,13 +112,36 @@ def path_message_prepare(sys_prompt, map):
     
     return message
     
+def critique_message_prepare(prompt, candidate_map_list):
+    base64_image_list = []
+    for image_candidate in candidate_map_list:
+        base64_image_list.append(base64.b64encode(image_candidate.getvalue()).decode("utf-8"))
+
+
+    message = []
+    
+    image_contents = []
+    image_contents.append({
+        "type": "text",
+        "text": prompt,
+    })
+    for base64_image in base64_image_list:
+        image_contents.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_image}"
+            }
+        })
+    message.append({"role": "user", "content": image_contents})
+    
+    return message
     
 def chat_with_gpt4v(chat_history):
     retries = 10    
     while retries > 0:  
         try: 
             response = client.chat.completions.create(
-                model='o1', 
+                model='gpt-4o', 
                 response_format = { "type": "json_object" },
                 messages = chat_history,
                 # temperature=0.1,

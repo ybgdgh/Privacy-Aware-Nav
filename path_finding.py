@@ -85,7 +85,10 @@ def write_number_for_large(image, number):
 
 def write_scene_name(image, centers):
     
-    pil_image = Image.fromarray(image)
+    if isinstance(image, np.ndarray):
+        pil_image = Image.fromarray(image)
+    else:
+        pil_image = image
         
     # add the number on the image
     # Initialize drawing context
@@ -222,7 +225,7 @@ def path_plan_from_topo_graph(all_topo_paths, obstacle_map, all_centers):
     return all_geo_paths
 
 def path_plan_from_topo_graph_for_large(all_topo_paths, obstacle_map, all_centers):
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(9, 9))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(15, 15))
     ob_map = cv2.dilate((obstacle_map).astype('uint8'), kernel)
     
     all_geo_paths = []
