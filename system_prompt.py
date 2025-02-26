@@ -1,15 +1,27 @@
-infer_prompt = """You are a mobile robot responsible for selecting the optimal path based on the attributes of the transporting objects, the features of the environment, and the influence of human activaty. 
+infer_prompt = """You are an intelligent path-planning agent responsible for selecting the most suitable route for transporting an object while prioritizing privacy and safety.
 
-Your task involves analyzing several top-view maps of the scene, each illustrating different potential pathways from a starting point to the destination. Your goal is to choose the optimal path that best aligns with the needs of the attributes of the special object in terms of privacy and safety, the features of the scene, and the possible influence of human activaty in the scene such as avoid passing though the office area to decrease the potential influence of the human work, apart from just considering the shortest distance. Let’s think step by step.
+Task Overview:
 
-- Input: You will receive the description of the object needing transportation and a few top-view maps of the scene, each marked with different paths. Each path on the map is uniquely identified by a red number in the top-left corner. The black areas in the map are obstacles, which means all the paths and rooms are closed, can't be seen from outside.
-- Output: Your response should be a JSON object indicating the path ID you believe is most suitable given the object’s specific requirements.
+1. Analyze all provided top-view maps, each depicting different potential pathways from the starting point to the destination.
+
+2. Evaluate each path based on:
+- Privacy: Avoid routes passing through high-occupancy areas like offices and conference rooms when transporting sensitive objects.
+- Safety: Ensure the path avoids obstacles and hazardous areas.
+- Environmental Factors: Consider scene features and potential human activity to minimize disruptions.
+
+3. Select the most optimal path that best aligns with the object’s transport needs, ensuring minimal exposure to human presence.
+
+Input:
+- A description of the object requiring transportation.
+- Several top-view maps, each showing different paths uniquely identified by a red number in the top-left corner.
+
+Output: A structured JSON object identifying the best path based on the given constraints.
 
 Output Example:
 {
-    "observation": "Analyze what kind of scenes each path pass through in the top-view maps", 
-    "reason": "give the reason why select the path and why don't select other paths",
-    "self-critique": "constructive self-critique",
+    "observation": "Identify the type of areas each path traverses.",
+    "reason": "Explain the rationale for the chosen path and the rejection of others.",
+    "self-critique": "Assess the selection process and suggest possible refinements.",
     "path_id": "1"
 }
 """
@@ -50,7 +62,6 @@ Output:
     "reason": "The upper path is longer but avoids office areas, ensuring privacy and security for the classified file.",
     "path": "s, 5, 32, 31, 15, 30, 19, d",
     "self-critique": "This path minimizes exposure and avoids unnecessary detours, using only corridor landmarks."
-
 }
 
 please give the output based on the following input massages:
@@ -58,45 +69,49 @@ please give the output based on the following input massages:
 """
 
 find_path_prompt = """
-Please analyze the provided top-view map. The map has:
-- A starting point labeled "S".
-- A destination labeled "D".
-- Various numbered landmarks.
-
+You are a path searching agent. A top-view map with many random landmarks is given as input.
 Your task:
-1. Identify **every distinct, physically walkable route** from S to D, based on actual hallways, doorways, or open corridors visible in the top-view map. The **black areas are impassable**.
-   - Do not rely solely on direct or topological landmark connections; the path must be truly navigable on the map.
-   - Include each physically valid path exactly once—no duplications or purely theoretical paths.
-
-2. Write the output in **JSON** format, containing exactly two keys at the top level:
-   - `"observation"`: A short sentence describing how many routes you found and any relevant note on how they were determined.
-   - `"paths"`: An array of route objects, where each route object has an ordered list of the key landmarks traversed (landmarks), including S at the start and D at the end. Include only those intermediate landmarks necessary to distinguish each route from the others. Avoid redundancy and unnecessary detours.
+1. Identify **every distinct, physically walkable route** from S to D, based on actual hallways, doorways, or open corridors visible in the top-view map. The **black areas are impassable**. 
+2. Include only those intermediate landmarks necessary to distinguish each route from the others. Avoid redundancy and unnecessary detours. Write the output in **JSON** format
 
 An example of the desired JSON structure is as follows:
 
 Output Example:
 {
-    "observation": "From the office (start) to the conference room (destination), there appear to be two main corridor routes: one through the larger open lounge area at the top and another along narrower hallways at the bottom.",
+    "observation": "Analyze how many routes from the office (S) to the conference room (D).",
     "paths":{
         "path_1": ["S", "1", ..., "D"],
-        "path_2": ["S", "3",..., "D"]
+        "path_2": ["S", "3", ..., "D"],
         }
 }
-Please ensure that each listed route accurately reflects a physically walkable path in the top-view map.
 
-Please give the output following the input map:
+"""
+find_path_examp_1 = """
+There is an example: 
+For the given map, the output should be:
+Output:
+{
+    "observation": "From the start (S) to the destination (D), there appear to be three main corridor routes. After go out the start room (60), and go up, there is a intersection (65) to three ways: one through the left open lounge area (55), one go through the middle hallways (29), and another one go through the right hallways (12) to the destination (D).",
+    "paths":{
+        "path_1": ["S", "60", "65", "55", "D"],
+        "path_2": ["S", "60", "65", "29", "30", "D"],
+        "path_3": ["S", "60", "65", "12", "D"],
+        }
+}
+Now give the new output for the input map based on the example:
 """
 
 self_critique_prompt = """
-Double-check and analyse all the generated paths (red lines on the map). The paths should also not involve irrelevant rooms except the start and destination. If all the paths met the task needs, please output "1" in "self_critique", otherwise, please optimaze the paths based on the landmarks on the map around paths with the totally same format by removing repeat physically walkable route or redundancy/unnecessary detours.
+Double-check and analyse all the generated paths (red lines on the map). The paths should find all physically walkable route and not involve irrelevant rooms except the start and destination. If all the paths met the task needs, please output "1" in "self_critique", otherwise, please optimaze the paths based on the landmarks on the map around paths with the totally same format by removing repeat physically walkable route or redundancy/unnecessary detours, and adding necessary route.
 
 # if it's not good
 Output Example:
 {
     "self_critique": "0", 
+    "plan": "Analyze each route's landmarks based on the maps, remove unnecessary landmarks and add the important landmarks into the routes.",
     "paths":{
         "path_1": ["S", "1", ..., "D"],
-        "path_2": ["S", "3",..., "D"]
+        "path_2": ["S", "3",..., "D"],
         }
 }
 

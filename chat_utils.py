@@ -12,6 +12,7 @@ from io import BytesIO
 from PIL import Image
 
 import system_prompt
+import os
 
 client = OpenAI()
 
@@ -91,17 +92,33 @@ def generate_message_prepare(sys_prompt, map, obs, navigation_instruct):
     
     return message
 
-def path_message_prepare(sys_prompt, map):
+def path_message_prepare(sys_prompt, map, exam_map):
     message = []
     message.append({
         "role": "system", 
         "content": sys_prompt,
     })
     
-    base64_image = base64.b64encode(map.getvalue()).decode("utf-8")
-    # base64_image_orignal = base64.b64encode(orignal_map.getvalue()).decode("utf-8")
+    pil_image = Image.open(exam_map)
+    buffered = BytesIO()
+    pil_image.save(buffered, format="JPEG")
+    base64_image_exam = base64.b64encode(buffered.getvalue()).decode("utf-8")
     
-    image_contents = []
+    example_contents = []
+    example_contents.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_exam}"
+        }
+    })
+    example_contents.append({
+        "type": "text",
+        "text": system_prompt.find_path_examp_1,
+    })
+    
+    base64_image = base64.b64encode(map.getvalue()).decode("utf-8")
+    
+    image_contents = example_contents
     image_contents.append({
         "type": "image_url",
         "image_url": {
@@ -141,7 +158,7 @@ def chat_with_gpt4v(chat_history):
     while retries > 0:  
         try: 
             response = client.chat.completions.create(
-                model='gpt-4o', 
+                model='o1', 
                 response_format = { "type": "json_object" },
                 messages = chat_history,
                 # temperature=0.1,
