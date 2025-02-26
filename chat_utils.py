@@ -40,7 +40,7 @@ def chat_with_gpt4v(chat_history):
     while retries > 0:  
         try: 
             response = client.chat.completions.create(
-                model='gpt-4o-mini', 
+                model='o1', 
                 response_format = { "type": "json_object" },
                 messages = chat_history,
                 # temperature=0.1,
